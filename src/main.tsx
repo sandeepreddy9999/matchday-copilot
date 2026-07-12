@@ -18,7 +18,7 @@ createRoot(rootElement).render(
 // dev always sees fresh code instead of a stale cached bundle.
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/fifa-copilot/sw.js').catch((err) => {
+    navigator.serviceWorker.register('/matchday-copilot/sw.js').catch((err) => {
       console.warn('Service worker registration failed:', err);
     });
   });
