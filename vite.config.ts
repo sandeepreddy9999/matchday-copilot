@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/fifa-copilot/',
+  base: '/matchday-copilot/',
   plugins: [react(), tailwindcss()],
   build: {
     // Keep vendor code split from feature code for better caching / lazy loading.
