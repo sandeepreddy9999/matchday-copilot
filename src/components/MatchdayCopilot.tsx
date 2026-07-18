@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Globe2, LayoutGrid, MessageCircle, Users } from 'lucide-react';
 import { BAND_WORDS, LANGS, STAND_WORDS, STRINGS } from '../i18n';
 import { COLOR, FONT_BODY, FONT_DISPLAY, FONT_MONO, SHADOW_CARD, SHADOW_RAISED } from '../theme';
-import type { ChatMessage, Lang, Zone } from '../types';
+import type { Lang, Zone } from '../types';
 import { TRANSIT_LINES, ZONE_META, clamp } from '../zones';
+import { useCopilotChat } from '../hooks/useCopilotChat';
 import StadiumMap from './StadiumMap';
 import ZoneList from './ZoneList';
 import ChatPanel from './ChatPanel';
@@ -18,8 +19,6 @@ export default function MatchdayCopilot() {
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [draft, setDraft] = useState('');
   const [zones, setZones] = useState<Zone[]>(() => ZONE_META.map((z) => ({ ...z, density: z.base })));
   const [clock, setClock] = useState(new Date());
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -53,10 +52,6 @@ export default function MatchdayCopilot() {
     return () => clearInterval(id);
   }, [reducedMotion]);
 
-  useEffect(() => {
-    if (chatLogRef.current) chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
-  }, [messages, chatOpen]);
-
   const zoneName = useCallback((z: Zone): string => `${BAND_WORDS[lang][z.band]} · ${STAND_WORDS[lang][z.stand]}`, [lang]);
 
   const filteredZones = useMemo(() => {
@@ -65,30 +60,11 @@ export default function MatchdayCopilot() {
     return zones.filter((z) => zoneName(z).toLowerCase().includes(q));
   }, [zones, query, zoneName]);
 
-  function respond(text: string): void {
-    const lower = text.toLowerCase();
-    let answer = t.fallbackGeneric;
+  const { messages, draft, setDraft, respond, handleSend } = useCopilotChat({ zones, lang, zoneName });
 
-    if (/(quiet|calm|tranquil|هادئ)/.test(lower)) {
-      const quietZones = zones.filter((z) => z.quiet).map(zoneName);
-      answer = quietZones.length ? `${quietZones.join(' and ')} ${quietZones.length > 1 ? 'are' : 'is'} marked as a quiet zone right now.` : 'No quiet zones are marked right now.';
-    } else if (/(wheelchair|accessib|silla|cadeira|fauteuil|احتياج)/.test(lower)) {
-      const accessible = zones.filter((z) => z.wheelchair).map(zoneName);
-      answer = accessible.length ? `${accessible.join(' and ')} ${accessible.length > 1 ? 'offer' : 'offers'} wheelchair access.` : 'No wheelchair-accessible zones are marked right now.';
-    } else if (/(crowd|busy|wait|line|espera|lotad|attente|ازدحام)/.test(lower)) {
-      const quietest = [...zones].sort((a, b) => a.density - b.density)[0];
-      answer = `${zoneName(quietest)} currently has the shortest wait, at about ${Math.round(quietest.density)}%.`;
-    }
-
-    setMessages((m) => [...m, { role: 'user', text }, { role: 'assistant', text: answer, mode: 'offline' }]);
-  }
-
-  function handleSend(): void {
-    const text = draft.trim();
-    if (!text) return;
-    respond(text);
-    setDraft('');
-  }
+  useEffect(() => {
+    if (chatLogRef.current) chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
+  }, [messages, chatOpen]);
 
   function selectZone(id: string): void {
     setSelectedZone((prev) => (prev === id ? null : id));

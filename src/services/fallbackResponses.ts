@@ -6,7 +6,9 @@
  * answer is still trustworthy, just less flexible than a live one.
  */
 
-export type SupportedLang = 'en' | 'es' | 'pt' | 'fr' | 'ar';
+import type { Lang } from '../types';
+
+export type SupportedLang = Lang;
 
 export interface ZoneSnapshot {
   name: string; // already localized, e.g. "Lower Bowl · North"
